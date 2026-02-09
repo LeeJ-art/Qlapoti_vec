@@ -12,6 +12,8 @@
 #include <sqisign_namespace.h>
 #include <ec.h>
 #include <stdio.h>
+#include <arm_neon.h>
+#include <fp_constants.h>
 
 /** @defgroup hd_module Abelian surfaces and their isogenies
  * @{
@@ -309,6 +311,11 @@ void double_couple_jac_point_iter(theta_couple_jac_point_t *out,
                                   const theta_couple_jac_point_t *in,
                                   const theta_couple_curve_t *E1E2);
 
+void double_couple_jac_point_iter_vec(uint32x4_t *out1, uint32x4_t *out2,
+                        unsigned n,
+                        const uint32x4_t *jac1, const uint32x4_t *jac2,
+                        const uint32x4_t *E1, const uint32x4_t *E2);
+
 /**
  * @brief A forgetful function which returns (X : Z) points given a pair of (X : Y : Z) points
  *
@@ -424,6 +431,116 @@ test_couple_point_order_twof(const theta_couple_point_t *T, const theta_couple_c
     return check_P1 & check_P2;
 }
 
+/*New vectorization*/
+void initial_montback_array(fp_t* mb, fp_t* imb);
+
+void initial_q_value_1(uint32_t* q1);
+
+void ec_montback_array(fp_t* mb);
+
+static inline void theta_montback(theta_point_t* a, fp_t* mb){
+    fp_mul(&(a[0].x.re), &(a[0].x.re), mb);
+    fp_mul(&(a[0].x.im), &(a[0].x.im), mb);
+    fp_mul(&(a[0].y.re), &(a[0].y.re), mb);
+    fp_mul(&(a[0].y.im), &(a[0].y.im), mb);
+    fp_mul(&(a[0].z.re), &(a[0].z.re), mb);
+    fp_mul(&(a[0].z.im), &(a[0].z.im), mb);
+    fp_mul(&(a[0].t.re), &(a[0].t.re), mb);
+    fp_mul(&(a[0].t.im), &(a[0].t.im), mb);
+}
+
+static inline void u32_montback(uint32x4_t* a, uint32x4_t* mb){
+    fp_mul_batched((uint32x2_t*)a, a, mb);
+    fp_mul_batched((uint32x2_t*)(a+9), a+9, mb);
+}
+
+void transpose(uint32x4_t *Out, theta_point_t In);
+
+void itranspose(theta_point_t *Out, uint32x4_t *In);
+
+static inline void ec_curve_to_vec32(uint32x4_t *Out, const ec_curve_t E){
+    fp_t mb, imb;
+    theta_point_t tp;
+    initial_montback_array(&mb, &imb);
+
+    tp.x = E.A;
+    tp.y = E.C;
+    tp.z = E.A24.x;
+    tp.t = E.A24.z;
+    theta_montback(&tp, &mb);
+    transpose(Out, tp);
+}
+
+static inline void jac_point_to_vec32(uint32x4_t *Out, const jac_point_t J){
+    fp_t mb, imb;
+    theta_point_t tp;
+    initial_montback_array(&mb, &imb);
+
+    tp.x = J.x;
+    tp.y = J.y;
+    tp.z = J.z;
+    fp2_set_zero(&tp.t);
+    theta_montback(&tp, &mb);
+    transpose(Out, tp);
+}
+
+static inline void theta_point_to_vec32(uint32x4_t *Out, const theta_point_t T){
+    fp_t mb, imb;
+    theta_point_t tp;
+    initial_montback_array(&mb, &imb);
+
+    tp.x = T.x;
+    tp.y = T.y;
+    tp.z = T.z;
+    tp.t = T.t;
+    theta_montback(&tp, &mb);
+    transpose(Out, tp);
+}
+
+static inline void transpose_matrix_with_R2(uint32x4_t (*Out)[FP2_LIMBS], const basis_change_matrix_t In){
+    fp_t mb, imb;
+    theta_point_t tp;
+    initial_montback_array(&mb, &imb);
+
+    tp.x = In.m[0][0];
+    tp.y = In.m[1][0];
+    tp.z = In.m[2][0];
+    tp.t = In.m[3][0];
+    theta_montback(&tp, &mb);
+    transpose(Out[0], tp);
+
+    tp.x = In.m[0][1];
+    tp.y = In.m[1][1];
+    tp.z = In.m[2][1];
+    tp.t = In.m[3][1];
+    theta_montback(&tp, &mb);
+    transpose(Out[1], tp);
+
+    tp.x = In.m[0][2];
+    tp.y = In.m[1][2];
+    tp.z = In.m[2][2];
+    tp.t = In.m[3][2];
+    theta_montback(&tp, &mb);
+    transpose(Out[2], tp);
+
+    tp.x = In.m[0][3];
+    tp.y = In.m[1][3];
+    tp.z = In.m[2][3];
+    tp.t = In.m[3][3];
+    theta_montback(&tp, &mb);
+    transpose(Out[3], tp);
+}
+
+
+
+extern int xDBLMUL_vec(ec_point_t *S,
+        const ec_point_t *P,
+        const digit_t *k,
+        const ec_point_t *Q,
+        const digit_t *l,
+        const ec_point_t *PQ,
+        const int kbits,
+        const ec_curve_t *curve);
 // end of hd_functions
 /**
  * @}
