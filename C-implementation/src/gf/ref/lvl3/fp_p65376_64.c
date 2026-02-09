@@ -902,6 +902,7 @@ void fp_sub_batched(uint32x4_t* out, uint32x4_t *a, uint32x4_t *b){
     for (int i=0; i<FP_LIMBS; i++){
         out[i] = vaddq_u32(a[i], vsubq_u32(q[i], b[i]));
     }
+    fp_bactched_reduction(out);
 }
 
 void fp_mul_batched(uint32x2_t *out, uint32x4_t *a, uint32x4_t *b){

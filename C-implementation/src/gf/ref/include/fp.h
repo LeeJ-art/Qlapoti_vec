@@ -15,8 +15,8 @@
 #if defined(__APPLE__)
     #define __fp_mul_asm __mulvec
 #else
-    //#define __fp_mul_asm __fp_mul_shift_batched__asm
-    #define __fp_mul_asm __mulvec
+    #define __fp_mul_asm __fp_mul_shift_batched__asm
+    //#define __fp_mul_asm __mulvec
 #endif
 
 typedef digit_t fp_t[NWORDS_FIELD]; // Datatype for representing field elements

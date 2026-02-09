@@ -2792,20 +2792,6 @@ theta_chain_compute_and_eval(unsigned n,
                              theta_couple_point_t *P12,
                              size_t numP)
 {
-    // unsigned n_cp = n;
-    // theta_couple_curve_t E12_cp, E34_cp;
-    // E12_cp.E1 = E12->E1;
-    // E12_cp.E2 = E12->E2;
-    // bool extra_torsion_cp = extra_torsion;
-    // E34_cp.E1 = E34->E1;
-    // E34_cp.E2 = E34->E2;
-    // theta_couple_point_t P12_cp[numP];
-    // for (size_t i=0; i<numP; i++){
-    //     P12_cp[i].P1 = P12[i].P1;
-    //     P12_cp[i].P2 = P12[i].P2;
-    // }
-    // size_t numP_cp = numP;
-    //_theta_chain_compute_impl_randomized(n_cp, &E12_cp, ker, extra_torsion_cp, &E34_cp, P12_cp, numP_cp, false, false);
     //return _theta_chain_compute_impl_ref(n, E12, ker, extra_torsion, E34, P12, numP, false, false);
     return _theta_chain_compute_impl_randomized(n, E12, ker, extra_torsion, E34, P12, numP, false, false);
 }

@@ -40,6 +40,8 @@ void fp2_select(fp2_t *d, const fp2_t *a0, const fp2_t *a1, uint32_t ctl);
 void fp2_cswap(fp2_t *a, fp2_t *b, uint32_t ctl);
 
 /*New vectorization*/
+uint32x4_t theta_point_is_zero(const uint32x4_t* a);
+void fp2_select_vec(uint32x4_t* out, uint32x4_t* in, uint32x4_t ctl_vec);
 uint32_t fp2_is_zero_32(const uint32x4_t* p, int x);
 void fp2_bactched_reduction(uint32x4_t *out);
 void fp2_add_batched(uint32x4_t* out, uint32x4_t *a, uint32x4_t *b);
